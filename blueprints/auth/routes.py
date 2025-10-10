@@ -47,6 +47,9 @@ def login():
 
     if not step == 'jwt':
         return {'message': 'Unauthorized'}, 401
+    
+    if not user:
+        return {'message': 'wrong step'}
 
     if rftk:
         frontend_cleanup = True
