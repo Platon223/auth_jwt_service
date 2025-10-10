@@ -1,5 +1,5 @@
 from extensions.db import db
-from sqlalchemy import Column, Text, Integer
+from sqlalchemy import Column, Text, Integer, DateTime
 from extensions.bcrypt import bcrypt
 
 class User(db.Model):
@@ -34,3 +34,12 @@ class JWT(db.Model):
     rftk = Column(Text, primary_key=True)
     user_id = Column(Text, nullable=False)
     user_name = Column(Text, nullable=False)
+
+
+class AuthEntry(db.Model):
+    __tablename__ = 'Codes'
+
+    id = Column(Text, primary_key=True)
+    code = Column(Text, nullable=False)
+    user_id = Column(Text, nullable=False)
+    expires_date = Column(DateTime, nullable=False)

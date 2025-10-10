@@ -1,9 +1,13 @@
-from flask import request, Blueprint
+from flask import request, Blueprint, redirect
 from flask_jwt_extended import create_access_token, get_jwt_identity, create_refresh_token, jwt_required
-from blueprints.auth.models import JWT, User
+from blueprints.auth.models import JWT, User, AuthEntry
 from extensions.db import db
 from extensions.bcrypt import bcrypt
+from extensions.mail import mail
 import uuid
+import secrets
+from flask_mail import Message
+from datetime import timedelta, datetime, timezone
 
 auth_bl = Blueprint('auth_bl', __name__)
 
@@ -13,15 +17,36 @@ def login():
     username = data.get('username')
     password = data.get('password')
     rftk = data.get('rftk')
+    step = request.args.get('step')
     frontend_cleanup = False
 
-    user = User.query.filter_by(username=username).first()
-    if not user:
-        return {'message': 'user not found'}, 401
-    elif not bcrypt.check_password_hash(user.password, password):
-        return {'message': 'password is invalid'}
+    if step == 'first_entry':
+
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return {'message': 'user not found'}, 401
+        elif not bcrypt.check_password_hash(user.password, password):
+            return {'message': 'password is invalid'}
+        
+        entry_id = uuid.uuid4()
+        auth_code = str(secrets.randbelow(1000000)).zfill(6)
+        auth_entry = AuthEntry(id=str(entry_id), code=auth_code, user_id=user.id, expires_date=datetime.now(timezone.utc) + timedelta(minutes=5))
+
+        mail_msg = Message(subject='Verification code from <company name>', body=f'Hi {user.username}, this is a verification code that you should type in the app:', html=f'<h2>{auth_code}</h2>', recipients=[user.email])
+        mail.send(mail_msg)
+
+        db.session.add(auth_entry)
+        db.session.commit()
+
+        return {'message': 'redirect to verify page on frontend', 'user_id': f'{user.id}'}
+        
+    
+
 
     # Refresh Token proccess at login
+
+    if not step == 'jwt':
+        return {'message': 'Unauthorized'}, 401
 
     if rftk:
         frontend_cleanup = True
@@ -43,6 +68,7 @@ def login():
             return {'message': 'refresh token is not found'}
     else:
         pass
+
     
     access_token = create_access_token(identity=username)
     refresh_token = create_refresh_token(identity=username)
@@ -108,6 +134,26 @@ def refresh():
     db.session.commit()
 
     return {'rftk': new_refresh_token, 'actk': new_access_token}
+
+@auth_bl.route('/verify', methods=['POST'])
+def verify():
+    json = request.get_json()
+    code = json.get('code')
+    user_id = json.get('user_id')
+
+    auth_entry = AuthEntry.query.filter_by(user_id=user_id, code=code).first()
+
+    if not auth_entry:
+        return {'message': 'Invalid auth code'}
+    
+    if auth_entry < datetime.now(timezone.utc):
+        return {'message': 'The auth code has been expired'}
+    
+    db.session.delete(auth_entry)
+    db.session.commit()
+
+    return redirect('/login?step=jwt')
+
 
 @auth_bl.route('/protected', methods=['POST'])
 @jwt_required()

@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from extensions.db import db
 from extensions.jwt import jwt
 from extensions.bcrypt import bcrypt
+from extensions.mail import mail
 from flask_migrate import Migrate
 from datetime import timedelta
 
@@ -15,6 +16,8 @@ def create_service():
     db.init_app(app)
     jwt.init_app(app)
     bcrypt.init_app(app)
+    mail.init_app(app)
+
 
     @jwt.expired_token_loader
     def expired_access_token(jwt_header, jwt_payload):
