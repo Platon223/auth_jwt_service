@@ -5,6 +5,10 @@ from extensions.bcrypt import bcrypt
 from extensions.mail import mail
 from flask_migrate import Migrate
 from datetime import timedelta
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 def create_service():
     app = Flask(__name__)
@@ -15,7 +19,7 @@ def create_service():
     app.config["MAIL_SERVER"] = 'smtp.sendgrid.net'
     app.config["MAIL_PORT"] = 587
     app.config["MAIL_USERNAME"] = 'apikey'
-    app.config["MAIL_PASSWORD"] = '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'
+    app.config["MAIL_PASSWORD"] = os.environ.get('SENDGRID_API_KEY')
     app.config["MAIL_DEFAULT_SENDER"] = 'platon.tikhnenko@gmail.com'
 
     db.init_app(app)
