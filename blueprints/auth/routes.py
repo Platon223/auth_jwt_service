@@ -100,6 +100,7 @@ def register():
     password = bcrypt.generate_password_hash(data.get('password'))
     email = data.get('email')
     job = data.get('job') if data.get('job') else 'not provided'
+    code_passed = bool(data.get('passed_code_check'))
 
     if not username and password and email:
         return {'message': 'please fill all the fields'}
