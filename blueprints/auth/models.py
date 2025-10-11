@@ -1,5 +1,5 @@
 from extensions.db import db
-from sqlalchemy import Column, Text, Integer, DateTime
+from sqlalchemy import Column, Text, Integer, DateTime, Boolean
 from extensions.bcrypt import bcrypt
 
 class User(db.Model):
@@ -11,6 +11,7 @@ class User(db.Model):
     avatar = Column(Text, nullable=False)
     email = Column(Text, nullable=False)
     job = Column(Text, nullable=True)
+    passed_code_check = Column(Boolean, nullable=False)
 
     def check_password(self, password):
         return bcrypt.check_password_hash(password, self.password)

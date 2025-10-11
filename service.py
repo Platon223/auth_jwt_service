@@ -18,6 +18,8 @@ def create_service():
     app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(minutes=2)
     app.config["MAIL_SERVER"] = 'smtp.sendgrid.net'
     app.config["MAIL_PORT"] = 587
+    app.config["MAIL_USE_TLS"] = True,
+    app.config["MAIL_USE_SSL"] = False,
     app.config["MAIL_USERNAME"] = 'apikey'
     app.config["MAIL_PASSWORD"] = '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'
     app.config["MAIL_DEFAULT_SENDER"] = 'platon.tikhnenko@gmail.com'

@@ -32,8 +32,12 @@ def login():
         auth_code = str(secrets.randbelow(1000000)).zfill(6)
         auth_entry = AuthEntry(id=str(entry_id), code=auth_code, user_id=user.id, expires_date=datetime.now(timezone.utc) + timedelta(minutes=5))
 
-        mail_msg = Message(subject='Verification code from <company name>', body=f'Hi {user.username}, this is a verification code that you should type in the app:', html=f'<h2>{auth_code}</h2>', recipients=[user.email])
-        mail.send(mail_msg)
+        try:
+            mail_msg = Message(subject='Verification code from <company name>', body=f'Hi {user.username}, this is a verification code that you should type in the app:', html=f'<h2>{auth_code}</h2>', recipients=[user.email])
+            mail.send(mail_msg)
+        except Exception as e:
+            return {'message': 'Oops, something went wrong on our end.'}, 500
+
 
         db.session.add(auth_entry)
         db.session.commit()
@@ -48,8 +52,12 @@ def login():
     if not step == 'jwt':
         return {'message': 'Unauthorized'}, 401
     
-    if not user:
-        return {'message': 'wrong step'}
+    user_at_jwt_step = User.query.filter_by(username=username).first()
+
+    # Step skipped detection
+
+    if not user_at_jwt_step.passed_code_check:
+        return {'message': 'Step skipped, redirect to login'}
 
     if rftk:
         frontend_cleanup = True
@@ -145,12 +153,15 @@ def verify():
     user_id = json.get('user_id')
 
     auth_entry = AuthEntry.query.filter_by(user_id=user_id, code=code).first()
+    user = User.query.filter_by(id=user_id).first()
 
     if not auth_entry:
         return {'message': 'Invalid auth code'}
     
-    if auth_entry < datetime.now(timezone.utc):
+    if auth_entry.expires_date < datetime.now(timezone.utc):
         return {'message': 'The auth code has been expired'}
+    
+    user.passed_code_check = True
     
     db.session.delete(auth_entry)
     db.session.commit()
