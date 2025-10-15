@@ -36,7 +36,7 @@ def login():
             mail_msg = Message(subject='Verification code from <company name>', body=f'Hi {user.username}, this is a verification code that you should type in the app:', html=f'<h2>{auth_code}</h2>', recipients=[user.email])
             mail.send(mail_msg)
         except Exception as e:
-            return {'message': 'Oops, something went wrong on our end.'}, 500
+            return {'message': f'Oops, something went wrong on our end. : {e}'}, 500
 
 
         db.session.add(auth_entry)
