@@ -33,6 +33,7 @@ def login():
         auth_entry = AuthEntry(id=str(entry_id), code=auth_code, user_id=user.id, expires_date=datetime.now(timezone.utc) + timedelta(minutes=5))
 
         try:
+            print(user.email)
             mail_msg = Message(subject='Verification code from <company name>', body=f'Hi {user.username}, this is a verification code that you should type in the app:', html=f'<h2>{auth_code}</h2>', recipients=[user.email])
             mail.send(mail_msg)
         except Exception as e:
