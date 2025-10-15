@@ -21,7 +21,7 @@ def create_service():
     app.config["MAIL_USE_TLS"] = True,
     app.config["MAIL_USE_SSL"] = False,
     app.config["MAIL_USERNAME"] = 'apikey'
-    app.config["MAIL_PASSWORD"] = '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'
+    app.config["MAIL_PASSWORD"] = os.getenv('SENDGRID_API_KEY')
     app.config["MAIL_DEFAULT_SENDER"] = 'platon.tikhnenko@gmail.com'
 
     db.init_app(app)
