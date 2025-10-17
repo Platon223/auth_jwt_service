@@ -24,9 +24,9 @@ def login():
 
         user = User.query.filter_by(username=username).first()
         if not user:
-            return {'message': 'user not found'}, 401
+            return {'message': 'user not found'}, 404
         elif not bcrypt.check_password_hash(user.password, password):
-            return {'message': 'password is invalid'}
+            return {'message': 'password is invalid'}, 401
         
         entry_id = uuid.uuid4()
         auth_code = str(secrets.randbelow(1000000)).zfill(6)
@@ -42,7 +42,7 @@ def login():
         db.session.add(auth_entry)
         db.session.commit()
 
-        return {'message': 'redirect to verify page on frontend', 'user_id': f'{user.id}', 'user_email': f'{user.email}'}
+        return {'message': 'redirect to verify page on frontend', 'user_id': f'{user.id}', 'user_email': f'{user.email}'}, 200
         
     
 
@@ -57,7 +57,7 @@ def login():
     # Step skipped detection
 
     if not user_at_jwt_step.passed_code_check:
-        return {'message': 'Step skipped, redirect to login'}
+        return {'message': 'Step skipped, redirect to login'}, 401
 
     if rftk:
         frontend_cleanup = True
@@ -74,9 +74,9 @@ def login():
                 db.session.delete(hacked_user_jwt_database)
                 db.session.commit()
 
-                return {'message': 'refresh token is not found'}
+                return {'message': 'refresh token is not found'}, 401
         else:
-            return {'message': 'refresh token is not found'}
+            return {'message': 'refresh token is not found'}, 401
     else:
         pass
 
@@ -90,7 +90,7 @@ def login():
     db.session.add(new_rftk)
     db.session.commit()
 
-    return {'actk': access_token, 'rftk': refresh_token, 'needs_cleanup': True if frontend_cleanup else False}
+    return {'actk': access_token, 'rftk': refresh_token, 'needs_cleanup': True if frontend_cleanup else False}, 200
 
 @auth_bl.route('/register', methods=['POST'])
 def register():
@@ -102,13 +102,13 @@ def register():
     job = data.get('job') if data.get('job') else 'not provided'
 
     if not username and password and email:
-        return {'message': 'please fill all the fields'}
+        return {'message': 'please fill all the fields'}, 401
 
     new_user = User(id=str(user_id), username=username, password=password, avatar='none', email=email, job=job, passed_code_check=False)
     db.session.add(new_user)
     db.session.commit()
 
-    return {'message': 'success'}
+    return {'message': 'success'}, 200
 
 @auth_bl.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
@@ -125,13 +125,13 @@ def refresh():
     if not current_rftk:
         hacked_user_jwt_database = JWT.query.filter_by(rftk=rftk).first()
         if not hacked_user_jwt_database:
-            return {'message': 'refresh token is not found'}
+            return {'message': 'refresh token is not found'}, 404
         else:
 
             db.session.delete(hacked_user_jwt_database)
             db.session.commit()
 
-            return {'message': 'refresh token is not found'}
+            return {'message': 'refresh token is not found'}, 404
     
     db.session.delete(current_rftk)
     db.session.commit()
@@ -144,7 +144,7 @@ def refresh():
     db.session.add(JWT(rftk=new_refresh_token, user_id=current_user.id, user_name=current_user_name))
     db.session.commit()
 
-    return {'rftk': new_refresh_token, 'actk': new_access_token}
+    return {'rftk': new_refresh_token, 'actk': new_access_token}, 200
 
 @auth_bl.route('/verify', methods=['POST'])
 def verify():
@@ -156,10 +156,10 @@ def verify():
     user = User.query.filter_by(id=user_id).first()
 
     if not auth_entry:
-        return {'message': 'Invalid auth code'}
+        return {'message': 'Invalid auth code'}, 401
     
     if auth_entry.expires_date < datetime.now(timezone.utc):
-        return {'message': 'The auth code has been expired'}
+        return {'message': 'The auth code has been expired'}, 401
     
     user.passed_code_check = True
     
@@ -180,11 +180,11 @@ def data():
     username = get_jwt_identity()
     current_user = User.query.filter_by(username=username).first()
     if not current_user:
-        return {'message': 'user not found'}
+        return {'message': 'user not found'}, 401
     
     current_user_data = current_user.to_dict()
     
-    return current_user_data
+    return current_user_data, 200
 
     
 
