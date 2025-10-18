@@ -13,7 +13,7 @@ load_dotenv()
 def create_service():
     app = Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./auth.db'
-    app.config['JWT_SECRET_KEY'] = '123SecretJWTKey'
+    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=50)
     app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(minutes=2)
     app.config["MAIL_SERVER"] = 'smtp.sendgrid.net'
