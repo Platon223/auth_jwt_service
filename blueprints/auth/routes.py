@@ -1,4 +1,4 @@
-from flask import request, Blueprint, redirect, url_for
+from flask import request, Blueprint, redirect, url_for, current_app, jsonify
 from flask_jwt_extended import create_access_token, get_jwt_identity, create_refresh_token, jwt_required
 from blueprints.auth.models import JWT, User, AuthEntry
 from extensions.db import db
@@ -6,6 +6,7 @@ from extensions.bcrypt import bcrypt
 from extensions.mail import mail
 import uuid
 import secrets
+import requests
 from flask_mail import Message
 from datetime import timedelta, datetime, timezone
 import json as jn
@@ -51,13 +52,9 @@ def login():
 
     if not step == 'jwt':
         return {'message': 'Unauthorized'}, 401
+
     
-    json_load_string = request.args.get('json_load')
-    json_data = jn.loads(json_load_string)
-    username_from_verify = json_data.get('username')
-    password_from_verify = json_data.get('password')
-    
-    user_at_jwt_step = User.query.filter_by(username=username_from_verify).first()
+    user_at_jwt_step = User.query.filter_by(username=username).first()
     if not user_at_jwt_step:
         return {"message": "user not found"}, 404
 
@@ -159,7 +156,17 @@ def verify():
     db.session.delete(auth_entry)
     db.session.commit()
 
-    return redirect(url_for('auth.login'), step='jwt', json_load=jn.dumps({"username": user.username, "password": user_password}))
+    with current_app.test_client() as client:
+        response = client.post(
+            '/auth/login?step=jwt',
+            json={"username": user.username, "password": user_password}
+        )
+        
+        return jsonify(response.get_json()), response.status_code
+
+    
+
+    
 
 
 @auth_bl.route('/protected', methods=['POST'])
