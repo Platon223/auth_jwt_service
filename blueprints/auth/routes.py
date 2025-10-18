@@ -1,4 +1,4 @@
-from flask import request, Blueprint, redirect
+from flask import request, Blueprint, redirect, url_for
 from flask_jwt_extended import create_access_token, get_jwt_identity, create_refresh_token, jwt_required
 from blueprints.auth.models import JWT, User, AuthEntry
 from extensions.db import db
@@ -8,6 +8,7 @@ import uuid
 import secrets
 from flask_mail import Message
 from datetime import timedelta, datetime, timezone
+import json as jn
 
 auth_bl = Blueprint('auth_bl', __name__)
 
@@ -18,7 +19,6 @@ def login():
     password = data.get('password')
     rftk = data.get('rftk')
     step = request.args.get('step')
-    frontend_cleanup = False
 
     if step == 'first_entry':
 
@@ -42,7 +42,7 @@ def login():
         db.session.add(auth_entry)
         db.session.commit()
 
-        return {'message': 'redirect to verify page on frontend', 'user_id': f'{user.id}', 'user_email': f'{user.email}'}, 200
+        return {'message': 'redirect to verify page on frontend', 'user_id': f'{user.id}', 'user_email': f'{user.email}', 'user_password': f'{password}'}, 200
         
     
 
@@ -52,7 +52,12 @@ def login():
     if not step == 'jwt':
         return {'message': 'Unauthorized'}, 401
     
-    user_at_jwt_step = User.query.filter_by(username=username).first()
+    json_load_string = request.args.get('json_load')
+    json_data = jn.loads(json_load_string)
+    username_from_verify = json_data.get('username')
+    password_from_verify = json_data.get('password')
+    
+    user_at_jwt_step = User.query.filter_by(username=username_from_verify).first()
     if not user_at_jwt_step:
         return {"message": "user not found"}, 404
 
@@ -61,7 +66,8 @@ def login():
     if not user_at_jwt_step.passed_code_check:
         return {'message': 'Step skipped, redirect to login'}, 401
 
-    
+
+
     user_jwt_tables = JWT.query.filter_by(user_id=user_at_jwt_step.id)
     db.session.delete(user_jwt_tables)
     db.session.commit()
@@ -76,7 +82,7 @@ def login():
     db.session.add(new_rftk)
     db.session.commit()
 
-    return {'actk': access_token, 'rftk': refresh_token, 'needs_cleanup': True if frontend_cleanup else False}, 200
+    return {'actk': access_token, 'rftk': refresh_token}, 200
 
 @auth_bl.route('/register', methods=['POST'])
 def register():
@@ -137,6 +143,7 @@ def verify():
     json = request.get_json()
     code = json.get('code')
     user_id = json.get('user_id')
+    user_password = json.get('user_password')
 
     auth_entry = AuthEntry.query.filter_by(user_id=user_id, code=code).first()
     user = User.query.filter_by(id=user_id).first()
@@ -152,7 +159,7 @@ def verify():
     db.session.delete(auth_entry)
     db.session.commit()
 
-    return redirect('/login?step=jwt')
+    return redirect(url_for('auth.login'), step='jwt', json_load=jn.dumps({"username": user.username, "password": user_password}))
 
 
 @auth_bl.route('/protected', methods=['POST'])
