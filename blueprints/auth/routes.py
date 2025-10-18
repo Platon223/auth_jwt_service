@@ -6,7 +6,6 @@ from extensions.bcrypt import bcrypt
 from extensions.mail import mail
 import uuid
 import secrets
-import requests
 from flask_mail import Message
 from datetime import timedelta, datetime, timezone
 import json as jn
