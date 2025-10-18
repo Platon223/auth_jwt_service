@@ -53,38 +53,24 @@ def login():
         return {'message': 'Unauthorized'}, 401
     
     user_at_jwt_step = User.query.filter_by(username=username).first()
+    if not user_at_jwt_step:
+        return {"message": "user not found"}, 404
 
     # Step skipped detection
 
     if not user_at_jwt_step.passed_code_check:
         return {'message': 'Step skipped, redirect to login'}, 401
 
-    if rftk:
-        frontend_cleanup = True
-        current_user_jwt_database = JWT.query.filter_by(user_name=username)
-        current_rftk = current_user_jwt_database.filter(JWT.rftk==rftk).first()
-        if current_rftk:
-            if current_rftk.user_name == username:
-                # clean up
-                db.session.delete(current_rftk)
-                db.session.commit()
-            elif current_rftk.user_name != username:
-                # Refresh token reuse detection
-                hacked_user_jwt_database = JWT.query.filter_by(user_name=current_rftk.user_name).first()
-                db.session.delete(hacked_user_jwt_database)
-                db.session.commit()
-
-                return {'message': 'refresh token is not found'}, 401
-        else:
-            return {'message': 'refresh token is not found'}, 401
-    else:
-        pass
+    
+    user_jwt_tables = JWT.query.filter_by(user_id=user_at_jwt_step.id)
+    db.session.delete(user_jwt_tables)
+    db.session.commit()
 
     
     access_token = create_access_token(identity=username)
     refresh_token = create_refresh_token(identity=username)
 
-    new_rftk = JWT(rftk=refresh_token, user_id=user.id, user_name=user.username)
+    new_rftk = JWT(rftk=refresh_token, user_id=user_at_jwt_step.id, user_name=user_at_jwt_step.username)
     
     
     db.session.add(new_rftk)
