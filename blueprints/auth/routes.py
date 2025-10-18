@@ -65,7 +65,7 @@ def login():
 
 
     user_jwt_tables = JWT.query.filter_by(user_id=user_at_jwt_step.id)
-    db.session.delete(user_jwt_tables)
+    user_jwt_tables.delete()
     db.session.commit()
 
     
