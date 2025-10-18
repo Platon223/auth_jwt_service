@@ -147,7 +147,10 @@ def verify():
     if not auth_entry:
         return {'message': 'Invalid auth code'}, 401
     
-    if auth_entry.expires_date < datetime.now(timezone.utc):
+    timestamp_expires_date = auth_entry.expires_date.timestamp()
+    timestamp_real_time = datetime.now(timezone.utc).timestamp()
+    
+    if timestamp_expires_date < timestamp_real_time:
         return {'message': 'The auth code has been expired'}, 401
     
     user.passed_code_check = True
