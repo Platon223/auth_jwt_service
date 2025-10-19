@@ -12,6 +12,7 @@ class User(db.Model):
     email = Column(Text, nullable=False)
     job = Column(Text, nullable=True)
     passed_code_check = Column(Boolean, nullable=False)
+    has_perm_to_change_passwrd = Column(Boolean, nullable=False)
 
     def check_password(self, password):
         return bcrypt.check_password_hash(password, self.password)
@@ -44,3 +45,13 @@ class AuthEntry(db.Model):
     code = Column(Text, nullable=False)
     user_id = Column(Text, nullable=False)
     expires_date = Column(DateTime, nullable=False)
+
+class ForgotPasswordEntry(db.Model):
+    __tablename__ = 'ForgotPasswordCodes'
+
+    id = Column(Text, primary_key=True)
+    code = Column(Text, nullable=False)
+    user_id = Column(Text, nullable=False)
+    expires_date = Column(DateTime, nullable=False)
+
+

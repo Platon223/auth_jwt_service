@@ -1,6 +1,6 @@
 from flask import request, Blueprint, redirect, url_for, current_app, jsonify
 from flask_jwt_extended import create_access_token, get_jwt_identity, create_refresh_token, jwt_required
-from blueprints.auth.models import JWT, User, AuthEntry
+from blueprints.auth.models import JWT, User, AuthEntry, ForgotPasswordEntry
 from extensions.db import db
 from extensions.bcrypt import bcrypt
 from extensions.mail import mail
@@ -33,7 +33,7 @@ def login():
         auth_entry = AuthEntry(id=str(entry_id), code=auth_code, user_id=user.id, expires_date=datetime.now(timezone.utc) + timedelta(minutes=5))
 
         try:
-            mail_msg = Message(subject='Verification code from <company name>', body=f'Hi {user.username}, this is a verification code that you should type in the app:', html=f'<h2>{auth_code}</h2>', recipients=[user.email])
+            mail_msg = Message(subject='Your verification code is: ', body=f'Hi {user.username}, this is a verification code that you should type in the app:', html=f'<h2>{auth_code}</h2>', recipients=[user.email])
             mail.send(mail_msg)
         except Exception as e:
             return {'message': f'Oops, something went wrong on our end. : {e}'}, 500
@@ -92,7 +92,7 @@ def register():
     if not username and password and email:
         return {'message': 'please fill all the fields'}, 401
 
-    new_user = User(id=str(user_id), username=username, password=password, avatar='none', email=email, job=job, passed_code_check=False)
+    new_user = User(id=str(user_id), username=username, password=password, avatar='none', email=email, job=job, passed_code_check=False, has_perm_to_change_passwrd=False)
     db.session.add(new_user)
     db.session.commit()
 
@@ -140,6 +140,28 @@ def verify():
     code = json.get('code')
     user_id = json.get('user_id')
     user_password = json.get('user_password')
+    for_type = request.args.get('type')
+
+    if for_type == 'password':
+
+        forgot_password_entry = ForgotPasswordEntry.query.filter_by(user_email=user_id, code=code).first()
+        user = User.query.filter_by(id=user_id).first()
+
+        if not forgot_password_entry:
+            return {'message': 'Invalid recreation code'}, 401
+        
+        timestamp_fp_expires_date = forgot_password_entry.expires_date.timestamp()
+        timestamp_fp_real_time = datetime.now(timezone.utc).timestamp()
+
+        if timestamp_fp_expires_date < timestamp_fp_real_time:
+            return {'message': 'The recreation code has been expired'}, 401
+        
+        user.has_perm_to_change_passwrd = True
+        
+        forgot_password_entry.delete()
+        db.session.commit()
+
+        return {'message': 'redirect to create new password page on frontend', 'user_id': user_id}, 200
 
     auth_entry = AuthEntry.query.filter_by(user_id=user_id, code=code).first()
     user = User.query.filter_by(id=user_id).first()
@@ -165,6 +187,56 @@ def verify():
         )
         
         return jsonify(response.get_json()), response.status_code
+    
+
+@auth_bl.route('/forgot_password', methods=['POST'])
+def forgot_password():
+    json = request.get_json()
+    email = json.get('email')
+
+    user = User.query.filter_by(email=email)
+
+    if not user:
+        return {'message': 'user not found'}, 401
+    
+    code_id = uuid.uuid4()
+    forgot_password_code = str(secrets.randbelow(1000000)).zfill(6)
+    password_code_entry = ForgotPasswordEntry(id=str(code_id), code=forgot_password_code, user_id=user.id, expires_date=datetime.now(timezone.utc) + timedelta(minutes=10))
+
+    try:
+        mail_msg = Message(subject='Your password recreation code is: ', body=f'Hi there, this is a verification code that you should type in the app, to change your password:', html=f'<h2>{forgot_password_code}</h2>', recipients=[email])
+        mail.send(mail_msg)
+    except Exception as e:
+        return {'message': f'Oops, something went wrong on our end. : {e}'}, 500
+
+
+    db.session.add(password_code_entry)
+    db.session.commit()
+
+    return {'message': 'verify page to create a new password on frontend', 'user_id': user.id}, 200
+
+
+@auth_bl.route('/new_password', methods=['POST'])
+def generate_new_password():
+    json = request.get_json()
+    user_id = json.get('user_id')
+    new_password = bcrypt.generate_password_hash(data.get('password'))
+
+
+    user = User.query.filter_by(id=user_id).first()
+
+    if not user:
+        return {'message': 'user not found'}, 404
+    
+    if not user.has_perm_to_change_passwrd:
+        return {'message': 'user not verified'}, 401
+    
+    user.password = new_password
+    db.session.commit()
+
+    return {'message': 'password changed successfuly, redirect to login'}, 200
+    
+
 
     
 
