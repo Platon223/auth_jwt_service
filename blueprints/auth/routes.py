@@ -194,7 +194,7 @@ def forgot_password():
     json = request.get_json()
     email = json.get('email')
 
-    user = User.query.filter_by(email=email)
+    user = User.query.filter_by(email=email).first()
 
     if not user:
         return {'message': 'user not found'}, 401
