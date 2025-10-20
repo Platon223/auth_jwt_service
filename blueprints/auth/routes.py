@@ -144,7 +144,7 @@ def verify():
 
     if for_type == 'password':
 
-        forgot_password_entry = ForgotPasswordEntry.query.filter_by(user_email=user_id, code=code).first()
+        forgot_password_entry = ForgotPasswordEntry.query.filter_by(user_id=user_id, code=code).first()
         user = User.query.filter_by(id=user_id).first()
 
         if not forgot_password_entry:
