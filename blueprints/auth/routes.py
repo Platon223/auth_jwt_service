@@ -158,7 +158,7 @@ def verify():
         
         user.has_perm_to_change_passwrd = True
         
-        forgot_password_entry.delete()
+        db.session.delete(forgot_password_entry)
         db.session.commit()
 
         return {'message': 'redirect to create new password page on frontend', 'user_id': user_id}, 200
