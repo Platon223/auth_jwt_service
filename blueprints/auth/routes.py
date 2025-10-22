@@ -98,7 +98,7 @@ def register():
     if not username and password and email:
         return {'message': 'please fill all the fields'}, 401
 
-    new_user = User(id=str(user_id), username=username, password=password, avatar='none', email=email, job=job, passed_code_check=False, has_perm_to_change_passwrd=False)
+    new_user = User(id=str(user_id), username=username, password=password, avatar='none', email=email, job=job, passed_code_check=False, has_perm_to_change_passwrd=False, remember = False)
     db.session.add(new_user)
     db.session.commit()
 
