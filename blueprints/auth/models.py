@@ -10,9 +10,11 @@ class User(db.Model):
     password = Column(Text, nullable=False)
     avatar = Column(Text, nullable=False)
     email = Column(Text, nullable=False)
-    job = Column(Text, nullable=True)
+    job = Column(Text, nullable=False)
     passed_code_check = Column(Boolean, nullable=False)
     has_perm_to_change_passwrd = Column(Boolean, nullable=False)
+    remember = Column(Boolean, nullable=False)
+    remember_me_expire_date = Column(DateTime, nullable=True)
 
     def check_password(self, password):
         return bcrypt.check_password_hash(password, self.password)

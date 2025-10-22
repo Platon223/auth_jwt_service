@@ -18,6 +18,7 @@ def login():
     username = data.get('username')
     password = data.get('password')
     rftk = data.get('rftk')
+    remember_me = data.get('remember')
     step = request.args.get('step')
 
     if step == 'first_entry':
@@ -28,21 +29,26 @@ def login():
         elif not bcrypt.check_password_hash(user.password, password):
             return {'message': 'password is invalid'}, 401
         
-        entry_id = uuid.uuid4()
-        auth_code = str(secrets.randbelow(1000000)).zfill(6)
-        auth_entry = AuthEntry(id=str(entry_id), code=auth_code, user_id=user.id, expires_date=datetime.now(timezone.utc) + timedelta(minutes=5))
+        if not user.remember or user.remember_me_expire_date.timestamp() < datetime.now(timezone.utc).timestamp():
+            entry_id = uuid.uuid4()
+            auth_code = str(secrets.randbelow(1000000)).zfill(6)
+            auth_entry = AuthEntry(id=str(entry_id), code=auth_code, user_id=user.id, expires_date=datetime.now(timezone.utc) + timedelta(minutes=5))
 
-        try:
-            mail_msg = Message(subject='Your verification code is: ', body=f'Hi {user.username}, this is a verification code that you should type in the app:', html=f'<h2>{auth_code}</h2>', recipients=[user.email])
-            mail.send(mail_msg)
-        except Exception as e:
-            return {'message': f'Oops, something went wrong on our end. : {e}'}, 500
+            try:
+                mail_msg = Message(subject='Your verification code is: ', body=f'Hi {user.username}, this is a verification code that you should type in the app:', html=f'<h2>{auth_code}</h2>', recipients=[user.email])
+                mail.send(mail_msg)
+            except Exception as e:
+                return {'message': f'Oops, something went wrong on our end. : {e}'}, 500
+            
+            if remember_me:
+                user.remember = True
+                # For testing purposes the expiration date of remember me is going to be 2 min
+                user.remember_me_expire_date = datetime.now(timezone.utc) + timedelta(minutes=2)
 
+            db.session.add(auth_entry)
+            db.session.commit()
 
-        db.session.add(auth_entry)
-        db.session.commit()
-
-        return {'message': 'redirect to verify page on frontend', 'user_id': f'{user.id}', 'user_email': f'{user.email}', 'user_password': f'{password}'}, 200
+        return {'message': 'redirect to verify page on frontend', 'user_id': f'{user.id}', 'user_email': f'{user.email}', 'user_password': f'{password}', 'user_remembered': remember_me}, 200
         
     
 
@@ -162,6 +168,7 @@ def verify():
         db.session.commit()
 
         return {'message': 'redirect to create new password page on frontend', 'user_id': user_id}, 200
+    
 
     auth_entry = AuthEntry.query.filter_by(user_id=user_id, code=code).first()
     user = User.query.filter_by(id=user_id).first()
@@ -235,10 +242,7 @@ def generate_new_password():
     db.session.commit()
 
     return {'message': 'password changed successfuly, redirect to login'}, 200
-    
 
-
-    
 
     
 
