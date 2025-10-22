@@ -40,17 +40,12 @@ def login():
             except Exception as e:
                 return {'message': f'Oops, something went wrong on our end. : {e}'}, 500
             
-            if remember_me:
-                user.remember = True
-                # For testing purposes the expiration date of remember me is going to be 2 min
-                user.remember_me_expire_date = datetime.now(timezone.utc) + timedelta(minutes=2)
 
             db.session.add(auth_entry)
             db.session.commit()
 
-        return {'message': 'redirect to verify page on frontend', 'user_id': f'{user.id}', 'user_email': f'{user.email}', 'user_password': f'{password}', 'user_remembered': remember_me}, 200
+        return {'message': 'redirect to verify page on frontend', 'user_id': f'{user.id}', 'user_email': f'{user.email}', 'user_password': f'{password}', 'user_remembered': remember_me if remember_me != None else False}, 200
         
-    
 
 
     # Refresh Token proccess at login
@@ -146,6 +141,7 @@ def verify():
     code = json.get('code')
     user_id = json.get('user_id')
     user_password = json.get('user_password')
+    remember = json.get('remember')
     for_type = request.args.get('type')
 
     if for_type == 'password':
@@ -183,6 +179,10 @@ def verify():
         return {'message': 'The auth code has been expired'}, 401
     
     user.passed_code_check = True
+    if remember:
+        user.remember = True
+        # For testing purposes the expiration date of remember me is going to be 2 min
+        user.remember_me_expire_date = datetime.now(timezone.utc) + timedelta(minutes=2)
     
     db.session.delete(auth_entry)
     db.session.commit()
