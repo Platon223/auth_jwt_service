@@ -43,6 +43,8 @@ def login():
 
             db.session.add(auth_entry)
             db.session.commit()
+        else:
+            step = 'jwt'
 
         return {'message': 'redirect to verify page on frontend', 'user_id': f'{user.id}', 'user_email': f'{user.email}', 'user_password': f'{password}', 'user_remembered': remember_me if remember_me != None else False}, 200
         
