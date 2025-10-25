@@ -29,11 +29,12 @@ def login():
         elif not bcrypt.check_password_hash(user.password, password):
             return {'message': 'password is invalid'}, 401
         
-        if not user.remember or (expired := user.remember_me_expire_date.timestamp() < datetime.now(timezone.utc).timestamp()):
-            if expired:
+        if not user.remember or user.remember_me_expire_date.timestamp() < datetime.now(timezone.utc).timestamp():
+            if user.remember_me_expire_date.timestamp() < datetime.now(timezone.utc).timestamp():
                 user.remember = False
                 user.remember_me_expire_date.timestamp = None
-                
+                db.session.commit()
+
             entry_id = uuid.uuid4()
             auth_code = str(secrets.randbelow(1000000)).zfill(6)
             auth_entry = AuthEntry(id=str(entry_id), code=auth_code, user_id=user.id, expires_date=datetime.now(timezone.utc) + timedelta(minutes=5))
