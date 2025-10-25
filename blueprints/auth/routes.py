@@ -30,7 +30,7 @@ def login():
             return {'message': 'password is invalid'}, 401
         
         if not user.remember or user.remember_me_expire_date.timestamp() < datetime.now(timezone.utc).timestamp():
-            if user.remember_me_expire_date.timestamp() < datetime.now(timezone.utc).timestamp():
+            if user.remember_me_expire_date and user.remember_me_expire_date.timestamp() < datetime.now(timezone.utc).timestamp():
                 user.remember = False
                 user.remember_me_expire_date = None
                 db.session.commit()
