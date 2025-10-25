@@ -32,7 +32,7 @@ def login():
         if not user.remember or user.remember_me_expire_date.timestamp() < datetime.now(timezone.utc).timestamp():
             if user.remember_me_expire_date.timestamp() < datetime.now(timezone.utc).timestamp():
                 user.remember = False
-                user.remember_me_expire_date.timestamp = None
+                user.remember_me_expire_date = None
                 db.session.commit()
 
             entry_id = uuid.uuid4()
