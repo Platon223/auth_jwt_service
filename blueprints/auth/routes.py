@@ -164,6 +164,8 @@ def verify():
         timestamp_fp_real_time = datetime.now(timezone.utc).timestamp()
 
         if timestamp_fp_expires_date < timestamp_fp_real_time:
+            db.session.delete(forgot_password_entry)
+            db.session.commit()
             return {'message': 'The recreation code has been expired'}, 401
         
         user.has_perm_to_change_passwrd = True
@@ -184,6 +186,8 @@ def verify():
     timestamp_real_time = datetime.now(timezone.utc).timestamp()
     
     if timestamp_expires_date < timestamp_real_time:
+        db.session.delete(auth_entry)
+        db.session.commit()
         return {'message': 'The auth code has been expired'}, 401
     
     user.passed_code_check = True
