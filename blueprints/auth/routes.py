@@ -234,6 +234,13 @@ def forgot_password():
 
     return {'message': 'verify page to create a new password on frontend', 'user_id': user.id}, 200
 
+@auth_bl.route('/oauth', methods=['POST'])
+def oauth():
+    json = request.get_json()
+    company = json.get('company')
+
+    # Oauth logic here
+
 
 @auth_bl.route('/new_password', methods=['POST'])
 def generate_new_password():
