@@ -249,7 +249,7 @@ def oauth():
 @auth_bl.route('/oauth_authorize/<provider>')
 def authorize(provider):
     if provider == 'github':
-        token = github.authorize_access_token(state='test')
+        token = github.authorize_access_token()
     user_data = github.get('user').json()
     user_emails = github.get('user/emails')
     email = None
