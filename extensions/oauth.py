@@ -18,4 +18,5 @@ github = oauth.register(
         # For fine-grained apps or GitHub apps, enable refresh tokens:
         'token_endpoint_auth_method': 'client_secret_post',
     },
+    state=None
 )
