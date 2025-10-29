@@ -251,7 +251,7 @@ def authorize(provider):
     if provider == 'github':
         token = github.authorize_access_token()
     user_data = github.get('user').json()
-    user_emails = github.get('user/emails')
+    user_emails = github.get('user/emails').json()
     email = None
 
     for e in user_emails:
