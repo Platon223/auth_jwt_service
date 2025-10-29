@@ -10,6 +10,10 @@ from flask_mail import Message
 from datetime import timedelta, datetime, timezone
 import json as jn
 from extensions.oauth import oauth, github
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 auth_bl = Blueprint('auth_bl', __name__)
 
@@ -239,9 +243,10 @@ def forgot_password():
 def oauth():
     json = request.get_json()
     provider = json.get('provider')
-    redirect_uri = url_for('auth_bl.authorize', provider=provider, _external=True)
+    authorize_redirect = f'http://localhost:5555/auth/oauth_authorize/{provider}'
+    redirect_uri = f"https://github.com/login/oauth/authorize?client_id={os.getenv('GITHUB_OAUTH_CLIENT_ID')}&redirect_uri={authorize_redirect}&scope=user:email"
 
-    return github.authorize_redirect(redirect_uri)
+    return {'redirect': redirect_uri}
 
 
 @auth_bl.route('/oauth_authorize/<provider>', methods=['POST'])
