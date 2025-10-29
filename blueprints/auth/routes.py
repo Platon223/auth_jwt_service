@@ -244,7 +244,7 @@ def oauth():
     return github.authorize_redirect(redirect_uri)
 
 
-@auth_bl.route('/oauth_authorize/<provider>', methods=['POST'])
+@auth_bl.route('/oauth_authorize/<provider>')
 def authorize(provider):
     if provider == 'github':
         token = github.authorize_access_token()
