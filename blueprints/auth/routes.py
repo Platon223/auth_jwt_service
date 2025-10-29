@@ -239,20 +239,17 @@ def forgot_password():
 
     return {'message': 'verify page to create a new password on frontend', 'user_id': user.id}, 200
 
-@auth_bl.route('/oauth', methods=['POST'])
+@auth_bl.route('/oauth')
 def oauth():
-    json = request.get_json()
-    provider = json.get('provider')
-    authorize_redirect = f'http://localhost:5555/auth/oauth_authorize/{provider}'
-    redirect_uri = f"https://github.com/login/oauth/authorize?client_id={os.getenv('GITHUB_OAUTH_CLIENT_ID')}&redirect_uri={authorize_redirect}&scope=user:email"
+    authorize_redirect = f'http://localhost:5555/auth/oauth_authorize/github'
 
-    return {'redirect': redirect_uri}
+    return github.authorize_redirect(authorize_redirect, state='test')
 
 
 @auth_bl.route('/oauth_authorize/<provider>')
 def authorize(provider):
     if provider == 'github':
-        token = github.authorize_access_token()
+        token = github.authorize_access_token(state='test')
     user_data = github.get('user').json()
     user_emails = github.get('user/emails')
     email = None
