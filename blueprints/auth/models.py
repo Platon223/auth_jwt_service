@@ -15,6 +15,7 @@ class User(db.Model):
     has_perm_to_change_passwrd = Column(Boolean, nullable=False)
     remember = Column(Boolean, nullable=False)
     remember_me_expire_date = Column(DateTime, nullable=True)
+    provider = Column(Text, nullable=True)
 
     def check_password(self, password):
         return bcrypt.check_password_hash(password, self.password)

@@ -3,6 +3,7 @@ from extensions.db import db
 from extensions.jwt import jwt
 from extensions.bcrypt import bcrypt
 from extensions.mail import mail
+from extensions.oauth import oauth
 from flask_migrate import Migrate
 from datetime import timedelta
 from dotenv import load_dotenv
@@ -28,6 +29,8 @@ def create_service():
     jwt.init_app(app)
     bcrypt.init_app(app)
     mail.init_app(app)
+    oauth.init_app(app)
+    
 
 
     @jwt.expired_token_loader

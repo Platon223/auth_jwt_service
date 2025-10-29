@@ -9,6 +9,7 @@ import secrets
 from flask_mail import Message
 from datetime import timedelta, datetime, timezone
 import json as jn
+from extensions.oauth import oauth, github
 
 auth_bl = Blueprint('auth_bl', __name__)
 
@@ -237,9 +238,75 @@ def forgot_password():
 @auth_bl.route('/oauth', methods=['POST'])
 def oauth():
     json = request.get_json()
-    company = json.get('company')
+    provider = json.get('provider')
+    redirect_uri = url_for('oauth_authorize', provider=provider)
 
-    # Oauth logic here
+    return github.authorize_redirect(redirect_uri)
+
+
+@auth_bl.route('/oauth_authorize/<provider>', methods=['POST'])
+def authorize(provider):
+    if provider == 'github':
+        token = github.authorize_access_token()
+    user_data = github.get('user').json()
+    user_emails = github.get('user/emails')
+    email = None
+
+    for e in user_emails:
+        if e.get('primary'):
+            email = e.get('email')
+            break
+
+    user = User.query.filter_by(id=str(user_data['id'])).first()
+
+    if not user:
+        new_user = User(
+            id=str(user_data['id']), 
+            username=user_data['login'], 
+            password='github_provider', 
+            avatar='none', 
+            email=email, 
+            job='github_provider', 
+            passed_code_check=False, 
+            has_perm_to_change_passwrd=False, 
+            remember = False,
+            provider = 'github'
+        )
+
+        new_rftk = JWT(
+            rftk = token.get('refresh_token'),
+            user_id = str(user_data['id']),
+            user_name = user_data['login']
+        )
+
+        db.session.add(new_user)
+        db.session.add(new_rftk)
+        db.session.commit()
+
+        return {'actk': token.get('access_token'), 'rftk': token.get('refresh_token')}
+    
+    user_jwt_tables = JWT.query.filter_by(user_id=str(user_data['id']))
+    user_jwt_tables.delete()
+    db.session.commit()
+
+    new_access_token = token.get('access_token')
+    new_refresh_token = token.get('refresh_token')
+
+    new_rftk = JWT(
+        rftk = new_refresh_token,
+        user_id = str(user_data['id']),
+        user_name = user_data['login']
+    )
+
+    db.session.add(new_rftk)
+    db.session.commit()
+
+    return {'actk': new_access_token, 'rftk': new_refresh_token}
+
+
+    
+
+
 
 
 @auth_bl.route('/new_password', methods=['POST'])
