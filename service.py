@@ -13,6 +13,7 @@ load_dotenv()
 
 def create_service():
     app = Flask(__name__)
+    app.secret_key = os.getenv('APP_SECRET_KEY')
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./auth.db'
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=50)
