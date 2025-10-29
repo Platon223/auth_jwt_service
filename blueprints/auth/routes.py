@@ -239,7 +239,7 @@ def forgot_password():
 def oauth():
     json = request.get_json()
     provider = json.get('provider')
-    redirect_uri = url_for('oauth_authorize', provider=provider)
+    redirect_uri = url_for('auth_bl.oauth_authorize', provider=provider)
 
     return github.authorize_redirect(redirect_uri)
 
