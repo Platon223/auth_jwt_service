@@ -12,6 +12,7 @@ import json as jn
 from extensions.oauth import oauth, github
 import os
 from dotenv import load_dotenv
+import requests
 
 load_dotenv()
 
@@ -239,20 +240,47 @@ def forgot_password():
 
     return {'message': 'verify page to create a new password on frontend', 'user_id': user.id}, 200
 
-@auth_bl.route('/oauth')
+@auth_bl.route('/oauth', method=['POST'])
 def oauth():
-    authorize_redirect = f'http://localhost:5555/auth/oauth_authorize/github'
+    json = request.get_json()
+    provider = json.get('provider')
+    authorize_redirect = f'http://localhost:5555/auth/oauth_authorize/{provider}'
+    redirect_uri = f"https://github.com/login/oauth/authorize?client_id={os.getenv('GITHUB_OAUTH_CLIENT_ID')}&redirect_uri={authorize_redirect}&scope=user:email"
 
-    return github.authorize_redirect(authorize_redirect, state='test')
+    return {'redirect': redirect_uri}, 200
 
 
-@auth_bl.route('/oauth_authorize/<provider>')
+@auth_bl.route('/oauth_authorize/<provider>', methods=['GET'])
 def authorize(provider):
-    if provider == 'github':
-        token = github.authorize_access_token()
-    user_data = github.get('user').json()
-    user_emails = github.get('user/emails').json()
-    email = None
+
+    code = request.args.get('code')
+    if not code:
+        return {'message': 'no authorization code'}, 400
+    
+    access_token_request = "https://github.com/login/oauth/access_token"
+    body = {
+        "client_id": os.getenv("GITHUB_OAUTH_CLIENT_ID"),
+        "client_secret": os.getenv("GITHUB_OAUTH_CLIENT_SECRET"),
+        "code": code
+    }
+    headers = {"Accept": "application/json"}
+    response = requests.post(access_token_request, data=body, headers=headers)
+    token = response.json()
+
+    access_token = token.get("access_token")
+    if not access_token:
+        return {"message": "failed to obtain an access token"}, 400
+    
+    user_data = requests.get(
+        "https://api.github.com/user",
+        headers={"Authorization": f"token {access_token}"}
+    ).json()
+
+    user_emails = requests.get(
+        "https://api.github.com/user/emails",
+        headers={"Authorization": f"token {access_token}"}
+    ).json()
+        
 
     for e in user_emails:
         if e.get('primary'):
@@ -275,6 +303,11 @@ def authorize(provider):
             provider = 'github'
         )
 
+        # Github OAuth doesn't provide refresh tokens
+
+        if provider == 'github':
+            return {'actk': access_token}
+
         new_rftk = JWT(
             rftk = token.get('refresh_token'),
             user_id = str(user_data['id']),
@@ -286,6 +319,9 @@ def authorize(provider):
         db.session.commit()
 
         return {'actk': token.get('access_token'), 'rftk': token.get('refresh_token')}
+    
+    if provider == 'github':
+        return {'actk': access_token}
     
     user_jwt_tables = JWT.query.filter_by(user_id=str(user_data['id']))
     user_jwt_tables.delete()
@@ -304,10 +340,6 @@ def authorize(provider):
     db.session.commit()
 
     return {'actk': new_access_token, 'rftk': new_refresh_token}
-
-
-    
-
 
 
 
@@ -331,8 +363,6 @@ def generate_new_password():
 
     return {'message': 'password changed successfuly, redirect to login'}, 200
 
-
-    
 
 
 @auth_bl.route('/protected', methods=['POST'])
