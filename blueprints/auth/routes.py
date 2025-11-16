@@ -365,22 +365,16 @@ def generate_new_password():
 
 
 
-@auth_bl.route('/protected', methods=['POST'])
+@auth_bl.route("/find_by_username", methods=["GET"])
 @jwt_required()
-def protected():
-    return {'message': 'this is a protected route, made some chages to the docker container'}
-
-@auth_bl.route('/user_data_auth_to_taskservice', methods=['GET'])
-@jwt_required()
-def data():
+def find_user():
     username = get_jwt_identity()
     current_user = User.query.filter_by(username=username).first()
     if not current_user:
         return {'message': 'user not found'}, 401
+
+    return current_user.id, 200
     
-    current_user_data = current_user.to_dict()
-    
-    return current_user_data, 200
 
     
 
