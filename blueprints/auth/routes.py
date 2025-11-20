@@ -106,6 +106,10 @@ def register():
 
     if not username and password and email:
         return {'message': 'please fill all the fields'}, 401
+    
+    not_unique_username = User.query.filter(username=username).exists()
+    if not_unique_username:
+        return {"message": "username must be unique"}, 400
 
     new_user = User(id=str(user_id), username=username, password=password, avatar='none', email=email, job=job, passed_code_check=False, has_perm_to_change_passwrd=False, remember = False)
     db.session.add(new_user)
@@ -303,6 +307,9 @@ def authorize(provider):
             provider = 'github'
         )
 
+        db.session.add(new_user)
+        db.session.commit()
+
         # Github OAuth doesn't provide refresh tokens
 
         if provider == 'github':
@@ -314,7 +321,6 @@ def authorize(provider):
             user_name = user_data['login']
         )
 
-        db.session.add(new_user)
         db.session.add(new_rftk)
         db.session.commit()
 
