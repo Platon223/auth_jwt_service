@@ -16,8 +16,8 @@ def create_service():
     app.secret_key = os.getenv('APP_SECRET_KEY')
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./auth.db'
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
-    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=50)
-    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(minutes=2)
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=2)
+    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(minutes=5)
     app.config["MAIL_SERVER"] = 'smtp.sendgrid.net'
     app.config["MAIL_PORT"] = 587
     app.config["MAIL_USE_TLS"] = True
