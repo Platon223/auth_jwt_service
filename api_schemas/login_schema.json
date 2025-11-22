@@ -1,0 +1,17 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema#",
+    "title": "Login",
+    "properties": {
+        "username": {
+            "type": "string"
+        },
+        "password": {
+            "type": "string"
+        },
+        "remember": {
+            "type": "boolean"
+        }
+    },
+    "required": ["username", "password", "remember"],
+    "additionalProperties": false
+}

@@ -13,6 +13,7 @@ from extensions.oauth import oauth, github
 import os
 from dotenv import load_dotenv
 import requests
+from validates.login import validate_login
 
 load_dotenv()
 
@@ -20,10 +21,11 @@ auth_bl = Blueprint('auth_bl', __name__)
 
 @auth_bl.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
+    data = validate_login(request)
+    if "error" in data:
+        return {"message": data}, 400
     username = data.get('username')
     password = data.get('password')
-    rftk = data.get('rftk')
     remember_me = data.get('remember')
     step = request.args.get('step')
 
