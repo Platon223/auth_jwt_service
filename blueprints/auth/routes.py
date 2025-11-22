@@ -13,7 +13,7 @@ from extensions.oauth import oauth, github
 import os
 from dotenv import load_dotenv
 import requests
-from validates.login import validate_login
+from validates.validate import validate_route
 
 load_dotenv()
 
@@ -21,7 +21,7 @@ auth_bl = Blueprint('auth_bl', __name__)
 
 @auth_bl.route('/login', methods=['POST'])
 def login():
-    data = validate_login(request)
+    data = validate_route(request, "login_schema")
     if "error" in data:
         return {"message": data}, 400
     username = data.get('username')
@@ -99,15 +99,14 @@ def login():
 
 @auth_bl.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
+    data = validate_route(request, "register_schema")
+    if "error" in data:
+        return {"message": data}, 400
     user_id = uuid.uuid4()
     username = data.get('username')
     password = bcrypt.generate_password_hash(data.get('password'))
     email = data.get('email')
-    job = data.get('job') if data.get('job') else 'not provided'
-
-    if not username and password and email:
-        return {'message': 'please fill all the fields'}, 401
+    job = data.get('job')
 
     new_user = User(id=str(user_id), username=username, password=password, avatar='none', email=email, job=job, passed_code_check=False, has_perm_to_change_passwrd=False, remember = False)
     db.session.add(new_user)

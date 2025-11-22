@@ -3,8 +3,8 @@ from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 import os
 
-def validate_login(request):
-    schema_path = os.path.join(os.path.dirname(__file__), "../api_schemas/login_schema.json")
+def validate_route(request, schema):
+    schema_path = os.path.join(os.path.dirname(__file__), f"../api_schemas/{schema}.json")
 
     with open(schema_path) as f:
         schema = json.load(f)
