@@ -1,17 +1,20 @@
 {
     "$schema": "https://json-schema.org/draft-07/schema#",
-    "title": "Login",
+    "title": "Verify",
     "properties": {
-        "username": {
+        "code": {
             "type": "string"
         },
-        "password": {
+        "user_id": {
+            "type": "string"
+        },
+        "user_password": {
             "type": "string"
         },
         "remember": {
             "type": "boolean"
         }
     },
-    "required": ["username", "password"],
+    "required": ["code", "user_id", "user_password", "remember"],
     "additionalProperties": false
 }

@@ -152,7 +152,9 @@ def refresh():
 
 @auth_bl.route('/verify', methods=['POST'])
 def verify():
-    json = request.get_json()
+    json = validate_route(request, "verify_schema")
+    if "error" in json:
+        return {"message": json}, 400
     code = json.get('code')
     user_id = json.get('user_id')
     user_password = json.get('user_password')
