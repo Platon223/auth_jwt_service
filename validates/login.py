@@ -4,7 +4,7 @@ from jsonschema.exceptions import ValidationError
 import os
 
 def validate_login(request):
-    schema_path = os.path.dirname(__file__), "../api_schemas/login_schema.json"
+    schema_path = os.path.join(os.path.dirname(__file__), "../api_schemas/login_schema.json")
 
     with open(schema_path) as f:
         schema = json.load(f)
