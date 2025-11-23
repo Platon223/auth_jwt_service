@@ -380,7 +380,6 @@ def find_user():
     return current_user.id, 200
 
 @auth_bl.route("/metrics", methods=["GET"])
-@jwt_required
 def metrics():
     return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
     
