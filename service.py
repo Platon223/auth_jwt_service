@@ -8,11 +8,14 @@ from flask_migrate import Migrate
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
+from prometheus_client import Counter, Summary, generate_latest, CONTENT_TYPE_LATEST
 
 load_dotenv()
 
 def create_service():
     app = Flask(__name__)
+    REQUEST_COUNT = Counter("service_requests_total", "Total number of auth's service requests", ["method", "endpoint"])
+    EXCEPTIONS = Counter("service_exceptions_total", "Total number when service crashed", ["endpoint", "exception_type"])
     app.secret_key = os.getenv('APP_SECRET_KEY')
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./auth.db'
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
@@ -32,7 +35,13 @@ def create_service():
     mail.init_app(app)
     oauth.init_app(app)
     
+    @app.errorhandler(Exception)
+    def catch_all(e):
+        EXCEPTIONS.labels(endpoint=request.path, exception_type=type(e).__name__).inc()
 
+    @app.before_request
+    def counter():
+        REQUEST_COUNT.labels(method=request.method, endpoint=request.path).inc()
 
     @jwt.expired_token_loader
     def expired_access_token(jwt_header, jwt_payload):

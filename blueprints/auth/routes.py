@@ -1,4 +1,4 @@
-from flask import request, Blueprint, redirect, url_for, current_app, jsonify
+from flask import request, Blueprint, redirect, url_for, current_app, jsonify, Response
 from flask_jwt_extended import create_access_token, get_jwt_identity, create_refresh_token, jwt_required
 from blueprints.auth.models import JWT, User, AuthEntry, ForgotPasswordEntry
 from extensions.db import db
@@ -14,6 +14,7 @@ import os
 from dotenv import load_dotenv
 import requests
 from validates.validate import validate_route
+from service import generate_latest, CONTENT_TYPE_LATEST
 
 load_dotenv()
 
@@ -377,6 +378,11 @@ def find_user():
         return {'message': 'user not found'}, 401
 
     return current_user.id, 200
+
+@auth_bl.route("/metrics", methods=["GET"])
+@jwt_required
+def metrics():
+    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
     
 
     
