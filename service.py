@@ -59,7 +59,7 @@ def create_service():
         return jsonify({'message': 'no token provided'})
     
 
-    @auth_bl.route("/metrics", methods=["GET"])
+    @app.route("/metrics", methods=["GET"])
     def metrics():
         return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
