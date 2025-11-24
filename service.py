@@ -42,7 +42,7 @@ def create_service():
 
     @app.before_request
     def counter():
-        if request.path == "/metrics": return
+        if request.path == "/auth/metrics": return
         REQUEST_COUNT.labels(method=request.method, endpoint=request.path).inc()
 
     @jwt.expired_token_loader
