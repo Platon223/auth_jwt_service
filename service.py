@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from extensions.db import db
 from extensions.jwt import jwt
 from extensions.bcrypt import bcrypt
@@ -42,7 +42,7 @@ def create_service():
 
     @app.before_request
     def counter():
-        if request.path == "/auth/metrics": return
+        if request.path == "/metrics": return
         REQUEST_COUNT.labels(method=request.method, endpoint=request.path).inc()
 
     @jwt.expired_token_loader
@@ -57,6 +57,11 @@ def create_service():
     @jwt.unauthorized_loader
     def unauth(callback):
         return jsonify({'message': 'no token provided'})
+    
+
+    @auth_bl.route("/metrics", methods=["GET"])
+    def metrics():
+        return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
     # Register blueprints here
     from blueprints.auth.routes import auth_bl
