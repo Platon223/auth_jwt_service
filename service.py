@@ -38,6 +38,7 @@ def create_service():
     @app.errorhandler(Exception)
     def catch_all(e):
         EXCEPTIONS.labels(endpoint=request.path, exception_type=type(e).__name__).inc()
+        return {"message": f"error: {e}"}
 
     @app.before_request
     def counter():
