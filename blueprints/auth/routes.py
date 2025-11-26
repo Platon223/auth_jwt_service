@@ -25,6 +25,7 @@ auth_bl = Blueprint('auth_bl', __name__)
 def login():
     data = validate_route(request, "login_schema")
     if "error" in data:
+        log("AUTH", "warning", f"{data.get("username") if data.get("username") != None else "Unknown"} user failed input validation on login")
         return {"message": data}, 400
     username = data.get('username')
     password = data.get('password')
@@ -35,8 +36,10 @@ def login():
 
         user = User.query.filter_by(username=username).first()
         if not user:
+            log("AUTH", "info", f"{username} user was not found on login first entry")
             return {'message': 'user not found'}, 404
         elif not bcrypt.check_password_hash(user.password, password):
+            log("AUTH", "info", f"{username} user invalid password")
             return {'message': 'password is invalid'}, 401
         
         if not user.remember or user.remember_me_expire_date.timestamp() < datetime.now(timezone.utc).timestamp():
@@ -53,12 +56,14 @@ def login():
                 mail_msg = Message(subject='Your verification code is: ', body=f'Hi {user.username}, this is a verification code that you should type in the app:', html=f'<h2>{auth_code}</h2>', recipients=[user.email])
                 mail.send(mail_msg)
             except Exception as e:
+                log("AUTH", "critical", f"{username} user was not able to get a verification code on login")
                 return {'message': f'Oops, something went wrong on our end. : {e}'}, 500
             
 
             db.session.add(auth_entry)
             db.session.commit()
 
+            log("AUTH", "info", f"{username} user passed login first entry")
             return {'message': 'redirect to verify page on frontend', 'user_id': f'{user.id}', 'user_email': f'{user.email}', 'user_password': f'{password}', 'user_remembered': remember_me if remember_me != None else False}, 200
         else:
             step = 'jwt'
@@ -74,11 +79,13 @@ def login():
     
     user_at_jwt_step = User.query.filter_by(username=username).first()
     if not user_at_jwt_step:
+        log("AUTH", "info", f"{username} user was not found on login jwt step")
         return {"message": "user not found"}, 404
 
     # Step skipped detection
 
     if not user_at_jwt_step.passed_code_check:
+        log("AUTH", "warning", f"{username} user tried skipping a first entry step")
         return {'message': 'Step skipped, redirect to login'}, 401
 
 
@@ -97,12 +104,14 @@ def login():
     db.session.add(new_rftk)
     db.session.commit()
 
+    log("AUTH", "info", f"{username} user passed login step jwt")
     return {'actk': access_token, 'rftk': refresh_token}, 200
 
 @auth_bl.route('/register', methods=['POST'])
 def register():
     data = validate_route(request, "register_schema")
     if "error" in data:
+        log("AUTH", "warning", f"{data.get("username") if data.get("username") != None else "Unknown"} user failed input validation on register")
         return {"message": data}, 400
     user_id = uuid.uuid4()
     username = data.get('username')
@@ -133,12 +142,14 @@ def refresh():
     if not current_rftk:
         hacked_user_jwt_database = JWT.query.filter_by(rftk=rftk).first()
         if not hacked_user_jwt_database:
+            log("AUTH", "warning", f"{current_user_name} user refresh token was not found in db")
             return {'message': 'refresh token is not found'}, 404
         else:
 
             db.session.delete(hacked_user_jwt_database)
             db.session.commit()
 
+            log("AUTH", "warning", f"{current_user_name} user refresh token was not found in db, and was found in {hacked_user_jwt_database.user_name} user")
             return {'message': 'refresh token is not found'}, 404
     
     db.session.delete(current_rftk)
@@ -152,6 +163,7 @@ def refresh():
     db.session.add(JWT(rftk=new_refresh_token, user_id=current_user.id, user_name=current_user_name))
     db.session.commit()
 
+    log("AUTH", "info", f"{current_user_name} user got new access token and refresh token")
     return {'rftk': new_refresh_token, 'actk': new_access_token}, 200
 
 @auth_bl.route('/verify', methods=['POST'])
