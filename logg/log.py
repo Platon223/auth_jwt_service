@@ -1,17 +1,26 @@
 import logging
 import datetime
 import os
+from logging.handlers import TimedRotatingFileHandler
 
 def setup():
-    today = datetime.datetime.today()
     if not os.path.exists("logs"):
         os.makedirs("logs")
-    filename = f"{today.month:02d}-{today.day:02d}-{today.year}"
-    
+    log_file = os.path.join("logs", "app.log")
+
+    log_rotation_handler = TimedRotatingFileHandler(
+        log_file,
+        when="midnight",
+        interval=1,
+        backupCount=7
+    )
+
+    log_rotation_handler.setLevel(logging.DEBUG)
+
     logging.basicConfig(
         level=logging.DEBUG,
         handlers=[
-            logging.FileHandler(filename)
+            log_rotation_handler
         ]
     )
 
