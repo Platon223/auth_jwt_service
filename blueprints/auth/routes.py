@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 import requests
 from validates.validate import validate_route
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from logging.log import log
 
 load_dotenv()
 
@@ -112,6 +113,8 @@ def register():
     new_user = User(id=str(user_id), username=username, password=password, avatar='none', email=email, job=job, passed_code_check=False, has_perm_to_change_passwrd=False, remember = False)
     db.session.add(new_user)
     db.session.commit()
+
+    log("AUTH", "info", f"User: {username}, have registered their account")
 
     return {'message': 'success'}, 200
 
