@@ -10,12 +10,14 @@ from dotenv import load_dotenv
 import os
 from prometheus_client import Counter, Summary, generate_latest, CONTENT_TYPE_LATEST
 from logg.log import setup
+import logging
 
 load_dotenv()
 
 def create_service():
     app = Flask(__name__)
     setup()
+    logging.getLogger("werkzeug").setLevel(logging.ERROR)
     REQUEST_COUNT = Counter("service_requests_total", "Total number of auth's service requests", ["method", "endpoint"])
     EXCEPTIONS = Counter("service_exceptions_total", "Total number when service crashed", ["endpoint", "exception_type"])
     app.secret_key = os.getenv('APP_SECRET_KEY')
