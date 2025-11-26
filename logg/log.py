@@ -14,9 +14,12 @@ def setup():
         interval=1,
         backupCount=7
     )
+    log_formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
     log_rotation_handler.setLevel(logging.DEBUG)
-
+    log_rotation_handler.setFormatter(log_formatter)
     logging.basicConfig(
         level=logging.DEBUG,
         handlers=[
