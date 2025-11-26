@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 import requests
 from validates.validate import validate_route
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
-from logging.log import log
+from logg.log import log
 
 load_dotenv()
 

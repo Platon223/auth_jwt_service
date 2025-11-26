@@ -9,7 +9,7 @@ from datetime import timedelta
 from dotenv import load_dotenv
 import os
 from prometheus_client import Counter, Summary, generate_latest, CONTENT_TYPE_LATEST
-from logging.log import setup
+from logg.log import setup
 
 load_dotenv()
 
