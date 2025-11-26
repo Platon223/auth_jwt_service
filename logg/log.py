@@ -2,6 +2,7 @@ import logging
 import datetime
 import os
 from logging.handlers import TimedRotatingFileHandler
+import time
 
 def setup():
     if not os.path.exists("logs"):
@@ -14,7 +15,7 @@ def setup():
         interval=1,
         backupCount=7
     )
-    logging.Formatter.converter = datetime.UTC
+    logging.Formatter.converter = time.gmtime
     log_formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
