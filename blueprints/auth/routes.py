@@ -25,7 +25,7 @@ auth_bl = Blueprint('auth_bl', __name__)
 def login():
     data = validate_route(request, "login_schema")
     if "error" in data:
-        log("AUTH", "warning", f"{data.get("username") if data.get("username") != None else "Unknown"} user failed input validation on login")
+        log("AUTH", "warning", f"{data.get('username') if data.get('username') != None else 'Unknown'} user failed input validation on login")
         return {"message": data}, 400
     username = data.get('username')
     password = data.get('password')
@@ -111,7 +111,7 @@ def login():
 def register():
     data = validate_route(request, "register_schema")
     if "error" in data:
-        log("AUTH", "warning", f"{data.get("username") if data.get("username") != None else "Unknown"} user failed input validation on register")
+        log("AUTH", "warning", f"{data.get('username') if data.get('username') != None else 'Unknown'} user failed input validation on register")
         return {"message": data}, 400
     user_id = uuid.uuid4()
     username = data.get('username')
