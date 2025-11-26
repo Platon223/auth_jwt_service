@@ -6,7 +6,7 @@ from logging.handlers import TimedRotatingFileHandler
 def setup():
     if not os.path.exists("logs"):
         os.makedirs("logs")
-    log_file = os.path.join("logs", "app.log")
+    log_file = os.path.join("logs", "current.log")
 
     log_rotation_handler = TimedRotatingFileHandler(
         log_file,
@@ -14,6 +14,7 @@ def setup():
         interval=1,
         backupCount=7
     )
+    logging.Formatter.converter = datetime.UTC
     log_formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
